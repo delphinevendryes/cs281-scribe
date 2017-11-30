@@ -1,6 +1,9 @@
 \documentclass{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{../common}
+\usepackage{bbm}
+\usepackage{amsmath}
+\usepackage{amsfonts}
 \usepackage{../pagesetup}
 \usepackage{float}
 % **** IF YOU WANT TO DEFINE ADDITIONAL MACROS FOR YOURSELF, PUT THEM HERE:
@@ -284,5 +287,81 @@ The E-step, we find $q_{nk}$.
 
 and we can minimize the KL divergence term by setting $q_{nk} = p(z_n | x_n, \pi,\mu)$ as the same distribution.
 
+\smallskip
 
+\subsection{Exercises}
+
+\begin{exercise} \textbf{Expectation Maximization for hidden Markov model}
+
+\smallskip
+
+Let $X = (X_1, . . . , X_n)$ be a Markov chain on $\{0,1\}$ with initial distribution $\pi = (\pi_0, \pi_1)$ and $2 \times 2$ transition matrix $q$. Let $Y = (Y_1, . . . , Y_n)$ be such that, conditional on X, the $Y_i$?s are independent and the distribution of $Y_i$ given $X$ has pdf $g_{\mu, X_i}$. $g_{\mu, X_i}$ is assumed to be positive and $\mu$ is an unknown parameter. This exercise illustrates how the EM algorithm may be used to estimate the parameters $q$, $\pi$ and $\mu$.
+
+\begin{enumerate}
+\item Provide the likelihood of the random variable (X, Y) as a function of the parameters.
+\item Denote $\eta = (q, \pi, \mu)$. Prove that the intermediate quantity of the EM algorithm is:
+\begin{align*}
+Q(\eta; \eta') = \sum_{i \in \{0, 1\}} \mathbb{E}_{\eta'}[\mathbbm{1}[X_1 = i] | Y] \log(\pi_i) &+ \sum_{k=1}^{n-1} \sum_{i, j \in \{0, 1\}} \mathbb{E}_{\eta'}[\mathbbm{1}[X_k = i, X_{k+1} = j] | Y] \log(q_{i, j})\\ 
+&+ \sum_{k=1}^{n} \sum_{i \in \{0, 1\}} [\mathbbm{1}[X_k = i] | Y] \log(g_{\mu, i}(Y_k))
+\end{align*}
+
+\item Let $L$ be the likelihood of the data $Y$. Show that for any $(\eta, \eta')$:
+\begin{align*}
+L(\eta) - L(\eta') \geq Q(\eta; \eta') - Q(\eta'; \eta')
+\end{align*}
+\item Assume $\eta_p$ is a current estimate for $\eta$. Prove that $\eta_{p+1} \in \textrm{argmax}_{\eta} Q(\eta ; \eta_p)$ is a good choice.
+\end{enumerate} 
+\end{exercise}
+
+\smallskip
+
+\begin{proof}
+
+\smallskip
+
+\begin{enumerate}
+\item The likelihood is given by:
+\begin{align*}
+p(X, Y) &= p(X_1, \ldots, X_n) \times p(Y_1, \ldots, Y_n | X_1, \ldots, X_n)\\
+&= \pi_{X_1} \times \prod_{k=2}^n q_{X_k-1, X_k} \times \prod_{k=1}^n g_{\mu, X_k} (Y_k)
+\end{align*}
+
+\item Going back to the definition of the intermediate quantity in the EM algorithm, we have:
+$$Q(\eta ; \eta') = \mathbb{E}_{\eta'} ( \log p_{\eta} (X, Y) | Y)$$
+
+Using the result from question 1:
+$$Q(\eta ; \eta') = \mathbb{E}_{\eta'} [\log \pi_{X_1} | Y] + \sum_{k=2}^n \mathbb{E}_{\eta'} [\log q_{X_{k-1}, X_k} | Y] + \sum_{k=1}^n \mathbb{E}_{\eta'} [\log g_{\mu, X_k} (Y_k)| Y]$$
+
+Using the law of total probability:
+\begin{align*}
+Q(\eta ; \eta') = & \sum_{i \in \{0,1\}}\mathbb{P}_{\eta'} (X_1 = i | Y) \log \pi_{i}\\
+&+ \sum_{i, j \in \{0,1\}}\sum_{k=2}^n \mathbb{P}_{\eta'}(X_{k-1} = i, X_k = j | Y) \log q_{i, j}\\
+&+ \sum_{i \in \{0,1\}} \sum_{k=1}^n \mathbb{P}_{\eta'}(X_k = i | Y ) \log g_{\mu, i} (Y_k)\\
+= & \sum_{i \in \{0,1\}}\mathbb{E}_{\eta'} [\mathbbm{1}[X_1 = i] | Y] \log \pi_{i}\\
+&+ \sum_{i, j \in \{0,1\}}\sum_{k=2}^n \mathbb{E}_{\eta'}[\mathbbm{1}[X_{k-1} = i, X_k =j]| Y] \log q_{i, j}\\
+&+ \sum_{i \in \{0,1\}} \sum_{k=1}^n \mathbb{E}_{\eta'}[\mathbbm{1}[X_k = i] | Y] \log g_{\mu, i} (Y_k)
+\end{align*}
+\item Let's write down the log-likelihood of Y.
+\begin{align*}
+L(\eta) &= \log p(Y | \eta)\\
+&= \log \left( \sum_{(i_1, \dots, i_n) \in \{0,1\}^n} p\left(Y, X =(i_1, \ldots, i_n) | \eta \right) \right)\\
+&= \log \left( \sum_{(i_1, \dots, i_n) \in \{0,1\}^n} p\left(Y | \eta, X =(i_1, \ldots, i_n) \right) \times p\left(X =(i_1, \ldots, i_n) | \eta \right)\right)\\
+&= \log \left( \sum_{(i_1, \dots, i_n) \in \{0,1\}^n} \pi_{i_1} g_{\mu, i_1}(Y_1) \prod_{k=2}^n q_{i_{k-1}, i_k} g_{\mu, i_k}(Y_k)\right)
+\end{align*}
+Now let's write down:
+\begin{align*}
+Q(\eta ; \eta') - L(\eta) &= \mathbb{E}_{\eta'} [\log p_\eta(X, Y) | Y] - L(\eta)\\
+&= \mathbb{E}_{\eta'} [\log p_\eta(X, Y) - L(\eta) | Y ]\\
+&= \mathbb{E}_{\eta'} [\log p_\eta(X, Y) - log p_\eta(Y) | Y ]\\
+&= \mathbb{E}_{\eta'} [\log p_\eta(X | Y) | Y ]\\
+&= \mathbb{E}_{\eta'} [\log \left( p_\eta(X | Y) \frac{p_{\eta'}(X , Y)}{p_{\eta'}(X , Y)} \right) | Y ]\\
+&= \mathbb{E}_{\eta'} [\log \left( p_{\eta'}(X , Y) \right) | Y ] + \mathbb{E}_{\eta'} [\log \left( \frac{p_\eta(X | Y)}{p_{\eta'}(X , Y)} \right) | Y ]\\
+&= Q(\eta' ; \eta') + \mathbb{E}_{\eta'} \left[\log \left( \frac{p_\eta(X | Y)}{p_{\eta'}(X , Y)} \right) | Y \right]\\
+& \leq Q(\eta' ; \eta') + \log \mathbb{E}_{\eta'} \left[ \frac{p_\eta(X | Y)}{p_{\eta'}(X , Y)} | Y \right]\\
+&= Q(\eta' ; \eta') - L(\eta')
+\end{align*}
+by Jensen's inequality.
+\item If $\eta_{p+1} \in \textrm{argmax}_{\eta} Q(\eta ; \eta_p)$, then $Q(\eta_{p+1} ; \eta_p) \geq Q(\eta_{p} ; \eta_p)$, and by question 3, $L(\eta_{p+1}) \geq L(\eta_p)$.
+\end{enumerate}
+\end{proof}
 \end{document}
